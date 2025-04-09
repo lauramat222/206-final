@@ -1,13 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"
+}
+
 url = "https://www.fittotravel.net/latitude-and-longitude-of-u-s-largest-cities"
 
-response = requests.get(url)
+response = requests.get(url, headers=headers)
 soup = BeautifulSoup(response.text, "html.parser")
 
 table = soup.find("table")
-
 city_data = []
 
 for row in table.find_all("tr")[1:]:
