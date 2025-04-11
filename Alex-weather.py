@@ -31,7 +31,28 @@ def def_weather_data(lat, lon):
         grid_data = response.json()['properties']
 
         #get forcase of cities
+        forecast_url = grid_data['forecast']
+        forecast = requests.get(forecast_url, headers=HEADERS, timeout=10).json()
+
+        # get current conditions
+        current = next(
+            (p for p in forecast['properties']['periods'] if p['isDaytime']),
+            None
+        )
         
+        return {
+            'forecast_office': grid_data.get('forecastOffice'),
+            'grid_id': f"{grid_data['gridId']}/{grid_data['gridX']},{grid_data['gridY']}",
+            'current_temp': current['temperature'],
+            'temp_unit': current['temperatureUnit'],
+            'conditions': current['shortForecast'],
+            'humidity': current.get('relativeHumidity', {}).get('value'),
+            'updated': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except Exception as e:
+        print(f"Error fetching weather for {lat},{lon}: {str(e)}")
+        return None
+        }
 
         
 
