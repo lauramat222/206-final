@@ -52,7 +52,28 @@ def def_weather_data(lat, lon):
     except Exception as e:
         print(f"Error fetching weather for {lat},{lon}: {str(e)}")
         return None
-        }
+
+def analyze_cities_weather(city_data):
+    # process the cities and compile all weather data
+    results = []
+    for _, row in city_data.iterrows():
+        print(f"Processing {row['city']}, {row['state']}...")
+
+        weather = get_weather_data(row['latitude'], row['longitude'])
+
+        if weather:
+            record = {
+                'city': row['city']
+                'state': row['state'],
+                'latitude': row['latitude'],
+                'longitude': row['longitude'],
+                **weather
+            }
+            results.append(record)
+        
+        time.sleep(1)  # Respect rate limits
+    
+    return pd.DataFrame(results)
 
         
 
