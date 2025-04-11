@@ -75,6 +75,30 @@ def analyze_cities_weather(city_data):
     
     return pd.DataFrame(results)
 
+def save_results(df, output_file='city_weather_analysis.csv'):
+    #save results
+    df.to_csv(output_file, index=False)
+    print(f"Results saved to {output_file}")
+
+    #execution
+    if __name__ == "__main__":
+    # Load Dara's data
+    cities = load_city_data('Dara-soup.py.csv')
+    
+    if cities is not None:
+        # Verify required columns exist
+        required_cols = ['city', 'state', 'latitude', 'longitude']
+        if all(col in cities.columns for col in required_cols):
+            # Analyze weather data
+            weather_df = analyze_cities_weather(cities)
+            
+            # Save and show results
+            save_results(weather_df)
+            print("\nSample results:")
+            print(weather_df.head())
+        else:
+            print("Error: Input file missing required columns (city, state, latitude, longitude)")
+
         
 
 
