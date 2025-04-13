@@ -16,10 +16,10 @@ city_data = []
 for row in table.find_all("tr")[1:]:
     cols = row.find_all("td")
     if len(cols) >= 4:
-        city = cols[0].get_text(strip=True)
-        state = cols[1].get_text(strip=True)
-        latitude = cols[2].get_text(strip=True)
-        longitude = cols[3].get_text(strip=True)
+        city = cols[1].get_text(strip=True)
+        state = cols[2].get_text(strip=True)
+        latitude = cols[3].get_text(strip=True)
+        longitude = cols[4].get_text(strip=True)
         city_data.append({
             "city": city,
             "state": state,
@@ -27,7 +27,7 @@ for row in table.find_all("tr")[1:]:
             "longitude": longitude
         })
 
-for entry in city_data[:10]:
+for entry in city_data[:100]:
     print(entry)
 
 import csv
