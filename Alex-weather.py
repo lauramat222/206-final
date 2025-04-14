@@ -2,7 +2,7 @@
 import requests
 import pandas as pd
 import time
-import json
+import os
 
 
 HEADERS = {
@@ -102,7 +102,7 @@ def main():
     print("Starting weather data collection...")
 
     #load city data
-    cities = load_city_data
+    cities = load_city_data()
 
     if cities is not None:
         required_cols = ['city', 'state', 'latitude', 'longitude']
