@@ -28,6 +28,7 @@ def fetch_events_by_city(city: str, state: str) -> Optional[List[Dict[str, Any]]
         print(f"API request failed for {city}, {state}: {e}")
         return []
     
+    
     def load_city_data(csv_filename: str) -> List[Dict[str, str]]:
         with open(csv_filename, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
