@@ -10,18 +10,17 @@ HEADERS = {
     'Accept': 'application/geo+json'
 }
 
-def load_city_data(file_path):
+def load_city_data(file_path='top_100_us_cities_lat_lon.csv'):
     #Load city data from Dara's file
     try:
-        if file_path.endswith('.csv'):
-            return pd.read_csv(file_path)
-        else:
-            raise ValueError("Unsupported file format")
+        df = pd.read_csv(file_path)
+        print(f"Successfully loaded {len(df)} cities from {file_path}")
+        return df
     except Exception as e:
         print(f"Error loading city data: {e}")
         return None
 
-def get_weather_data(lat, lon):
+def get_weather_data(latitude, longitude):
     #get weather from weather.gov API"
     try:
         # getting grid endpoint"
