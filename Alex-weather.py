@@ -49,7 +49,7 @@ def get_weather_data(latitude, longitude):
             'updated': time.strftime('%Y-%m-%d %H:%M:%S')
         }
     except Exception as e:
-        print(f"Error fetching weather for {lat},{lon}: {str(e)}")
+        print(f"Error fetching weather for {latitude},{longitude}: {str(e)}")
         return None
 
 def analyze_cities_weather(city_data):
@@ -75,25 +75,56 @@ def analyze_cities_weather(city_data):
     return pd.DataFrame(results)
 
 def save_results(df, output_file='city_weather_analysis.csv'):
-    #save results
-    df.to_csv(output_file, index=False)
-    print(f"Results saved to {output_file}")
+    #save results to csv in SI 206/SI-final folder
 
-    #execution
-    if __name__ == "__main__":
-        # Load Dara's data
-        cities = load_city_data('Dara-soup.py.csv')
+    base_path = os.path.expanduser('~')  # Gets your home directory
+    output_path = os.path.join(base_path, 'Desktop', 'SI 206 Folder', 'SI-final', output_file)
     
-        if cities is not None:
-            # Verify required columns exist
-            required_cols = ['city', 'state', 'latitude', 'longitude']
-            if all(col in cities.columns for col in required_cols):
-                # Analyze weather data
-                weather_df = analyze_cities_weather(cities)
-                
-                # Save and show results
-                save_results(weather_df)
-                print("\nSample results:")
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    df.to_csv(output_path, index=False)
+    return output_path
+
+def print_results(df):
+    print("\nWEATHER RESULTS")
+    print("="*50)
+    for _, row in df.iterrows():
+        print(f"\n{row['city']}, {row['state']}:")
+        print(f"  Current Temp: {row['current_temp']}°{row['temp_unit']}")
+        print(f"  Conditions: {row['conditions']}")
+        print(f"  Humidity: {row['humidity']}%")
+        print(f"  Forecast Office: {row['forecast_office']}")
+        print(f"  Last Updated: {row['updated']}")
+    print("\n" + "="*50)
+
+def main():
+    print("Starting weather data collection...")
+
+    #load city data
+    cities = load_city_data
+
+    if cities is not None:
+        required_cols = ['city', 'state', 'latitude', 'longitude']
+        if all(col in cities.columns for col in required_cols):
+        # Analyze weather data
+            weather_df = analyze_cities_weather(cities)
+            
+            if not weather_df.empty:
+                # Save results
+                output_path = save_results(weather_df)
+                print(f"\nSaved results to: {output_path}")
+                 
+                # Print results
+                print_results(weather_df)
+                    
+                # Show sample data
+                print("\nSAMPLE DATA (first 5 rows):")
                 print(weather_df.head())
             else:
-                print("Error: Input file missing required columns (city, state, latitude, longitude)")
+                print("No weather data was retrieved. Check API errors above.")
+        else:
+            print("Error: Input file missing required columns (city, state, latitude, longitude)")
+
+if __name__ == "__main__":
+    main()
