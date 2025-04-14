@@ -98,5 +98,3 @@ def save_results(df, output_file='city_weather_analysis.csv'):
                 print(weather_df.head())
             else:
                 print("Error: Input file missing required columns (city, state, latitude, longitude)")
-
-                #hi
