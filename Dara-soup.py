@@ -39,3 +39,4 @@ with open("top_100_us_cities_lat_lon.csv", "w", newline="") as csvfile:
     writer.writeheader()
     for data in city_data:
         writer.writerow(data)
+
