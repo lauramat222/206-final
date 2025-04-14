@@ -1,6 +1,6 @@
 
 import requests
-import pandas as pandas
+import pandas as pd
 import time
 import json
 
@@ -21,7 +21,7 @@ def load_city_data(file_path):
         print(f"Error loading city data: {e}")
         return None
 
-def def_weather_data(lat, lon):
+def get_weather_data(lat, lon):
     #get weather from weather.gov API"
     try:
         # getting grid endpoint"
@@ -82,7 +82,7 @@ def save_results(df, output_file='city_weather_analysis.csv'):
 
     #execution
     if __name__ == "__main__":
-    # Load Dara's data
+        # Load Dara's data
         cities = load_city_data('Dara-soup.py.csv')
     
         if cities is not None:
