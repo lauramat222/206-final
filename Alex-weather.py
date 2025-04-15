@@ -4,7 +4,6 @@ import pandas as pd
 import time
 import os
 
-#hat
 
 HEADERS = {
     'User-Agent': 'SI_final_project/1.0 (aywarner@umich.edu)',
