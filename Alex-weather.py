@@ -98,6 +98,19 @@ def print_results(df):
         print(f"  Last Updated: {row['updated']}")
     print("\n" + "="*50)
 
+def save_to_database(df, db_path='events_weather.db'):
+    """Save weather data to SQLite database"""
+    conn = sqlite3.connect(db_path)
+    
+    # Create table
+    df.to_sql('weather_data', conn, if_exists='replace', index=False)
+    
+    # Add additional table for city info
+    city_df = df[['city', 'state', 'latitude', 'longitude']].drop_duplicates()
+    city_df.to_sql('cities', conn, if_exists='replace', index=False)
+    
+    conn.close()
+
 def main():
     print("Starting weather data collection...")
 
@@ -111,20 +124,15 @@ def main():
             weather_df = analyze_cities_weather(cities)
             
             if not weather_df.empty:
-                # Save results
+                
                 output_path = save_results(weather_df)
-                print(f"\nSaved results to: {output_path}")
-                 
-                # Print results
-                print_results(weather_df)
-                    
-                # Show sample data
-                print("\nSAMPLE DATA (first 5 rows):")
-                print(weather_df.head())
-            else:
-                print("No weather data was retrieved. Check API errors above.")
-        else:
-            print("Error: Input file missing required columns (city, state, latitude, longitude)")
+                save_to_database(weather_df)
+                try:
+                    import visualizations
+                    visualizations.plot_weather_vs_events()
+                except ImportError:
+                     print("Visualizations module not available")
+
 
 if __name__ == "__main__":
     main()
