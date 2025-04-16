@@ -1,4 +1,3 @@
-
 import requests
 import pandas as pd
 import time
@@ -99,18 +98,70 @@ def print_results(df):
         print(f"  Last Updated: {row['updated']}")
     print("\n" + "="*50)
 
+def initialize_database(db_path='events_weather.db'):
+    """Create all tables needed for the project"""
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    
+    cur.executescript("""
+        CREATE TABLE IF NOT EXISTS cities (
+            city TEXT,
+            state TEXT,
+            latitude REAL,
+            longitude REAL,
+            PRIMARY KEY (city, state)
+        );
+        
+        CREATE TABLE IF NOT EXISTS weather_data (
+            city TEXT,
+            state TEXT,
+            current_temp REAL,
+            conditions TEXT,
+            humidity REAL,
+            updated TEXT,
+            FOREIGN KEY (city, state) REFERENCES cities(city, state)
+        );
+        
+        CREATE TABLE IF NOT EXISTS venues (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            city TEXT,
+            state TEXT,
+            capacity INTEGER,
+            url TEXT,
+            FOREIGN KEY (city, state) REFERENCES cities(city, state)
+        );
+        
+        CREATE TABLE IF NOT EXISTS events (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            venue_id TEXT,
+            date TEXT,
+            time TEXT,
+            price_min REAL,
+            price_max REAL,
+            ticket_status TEXT,
+            url TEXT,
+            FOREIGN KEY (venue_id) REFERENCES venues(id)
+        );
+    """)
+    conn.commit()
+    conn.close()
+
+
 def save_to_database(df, db_path='events_weather.db'):
     """Save weather data to SQLite database"""
     conn = sqlite3.connect(db_path)
     
-    # Create table
-    df.to_sql('weather_data', conn, if_exists='replace', index=False)
-    
-    # Add additional table for city info
-    city_df = df[['city', 'state', 'latitude', 'longitude']].drop_duplicates()
-    city_df.to_sql('cities', conn, if_exists='replace', index=False)
+    # Save cities and weather data
+    df[['city', 'state', 'latitude', 'longitude']].to_sql(
+        'cities', conn, if_exists='replace', index=False)
+        
+    df[['city', 'state', 'current_temp', 'conditions', 'humidity', 'updated']].to_sql(
+        'weather_data', conn, if_exists='replace', index=False)
     
     conn.close()
+
 
 def main():
     print("Starting weather data collection...")
