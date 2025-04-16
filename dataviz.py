@@ -90,7 +90,26 @@ def plot_combined_analysis():
         """, conn)
 
         fallback_df.sort_values(by='avg_max', ascending=False, inplace=True)
-        fallback_df.plot(kind='bar', x='conditions', y=['avg_min', 'avg_max'], figsize=(12, 6), edgecolor='black', color=['#4caf50', '#f44336'])
+        print("\nFallback data preview:")
+        print(fallback_df.head())
+        print(fallback_df.dtypes)
+        fallback_df['avg_min'] = pd.to_numeric(fallback_df['avg_min'], errors='coerce')
+        fallback_df['avg_max'] = pd.to_numeric(fallback_df['avg_max'], errors='coerce')
+        fallback_df.dropna(subset=['avg_min', 'avg_max'], how='all', inplace=True)
+
+        if fallback_df.empty:
+            print("⚠️ Still no usable numeric price data to plot. Exiting price_analysis.")
+            return
+
+        fallback_df.plot(
+            kind='bar',
+            x='conditions',
+            y=['avg_min', 'avg_max'],
+            figsize=(12, 6),
+            edgecolor='black',
+            color=['#4caf50', '#f44336']
+        )
+        
         plt.title("Average Ticket Prices by Weather Condition")
         plt.ylabel("Average Price ($)")
         plt.xticks(ticks=np.arange(len(fallback_df['conditions'])), labels=wrap_labels(fallback_df['conditions']), rotation=45)
