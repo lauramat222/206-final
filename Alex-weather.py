@@ -104,7 +104,15 @@ def initialize_database(db_path='events_weather.db'):
     cur = conn.cursor()
     
     cur.executescript("""
-        CREATE TABLE IF NOT EXISTS cities (
+        DROP TABLE IF EXISTS cities;
+        DROP TABLE IF EXISTS weather_data;
+        DROP TABLE IF EXISTS venues;
+        DROP TABLE IF EXISTS events;
+    """)
+    
+    # Create new tables
+    cur.executescript("""
+        CREATE TABLE cities (
             city TEXT,
             state TEXT,
             latitude REAL,
@@ -112,7 +120,7 @@ def initialize_database(db_path='events_weather.db'):
             PRIMARY KEY (city, state)
         );
         
-        CREATE TABLE IF NOT EXISTS weather_data (
+        CREATE TABLE weather_data (
             city TEXT,
             state TEXT,
             current_temp REAL,
@@ -122,7 +130,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (city, state) REFERENCES cities(city, state)
         );
         
-        CREATE TABLE IF NOT EXISTS venues (
+        CREATE TABLE venues (
             id TEXT PRIMARY KEY,
             name TEXT,
             city TEXT,
@@ -132,7 +140,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (city, state) REFERENCES cities(city, state)
         );
         
-        CREATE TABLE IF NOT EXISTS events (
+        CREATE TABLE events (
             id TEXT PRIMARY KEY,
             name TEXT,
             venue_id TEXT,
