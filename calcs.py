@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Tuple, List
 
-def calculate_stats(db_path: str = "ticketmaster_events.db") -> Tuple[dict, List[tuple]]:
+def calculate_stats(db_path: str = "events_weather.db"):
     """Calculate statistics from the database"""
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()

@@ -177,24 +177,26 @@ def main():
     
     initialize_database()
 
-    #load city data
+    # initialize database with all required tables
+    initialize_database()
+
+    # load city data
     cities = load_city_data()
 
     if cities is not None:
         required_cols = ['city', 'state', 'latitude', 'longitude']
         if all(col in cities.columns for col in required_cols):
-        # Analyze weather data
+            # Analyze weather data
             weather_df = analyze_cities_weather(cities)
             
             if not weather_df.empty:
-                
                 output_path = save_results(weather_df)
                 save_to_database(weather_df)
                 try:
                     import visualizations
                     visualizations.plot_weather_vs_events()
                 except ImportError:
-                     print("Visualizations module not available")
+                    print("Visualizations module not available")
 
 
 if __name__ == "__main__":
