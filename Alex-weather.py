@@ -177,9 +177,6 @@ def main():
     
     initialize_database()
 
-    # initialize database with all required tables
-    initialize_database()
-
     # load city data
     cities = load_city_data()
 
