@@ -174,6 +174,8 @@ def save_to_database(df, db_path='events_weather.db'):
 
 def main():
     print("Starting weather data collection...")
+    
+    initialize_database()
 
     #load city data
     cities = load_city_data()
