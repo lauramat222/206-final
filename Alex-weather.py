@@ -20,37 +20,38 @@ def load_city_data(file_path='top_100_us_cities_lat_lon.csv'):
         print(f"Error loading city data: {e}")
         return None
 
-def get_weather_data(latitude, longitude):
-    #get weather from weather.gov API"
-    try:
-        # getting grid endpoint"
-        points_url = f"https://api.weather.gov/points/{latitude},{longitude}"
-        response = requests.get(points_url, headers=HEADERS, timeout=10)
-        response.raise_for_status()
-        grid_data = response.json()['properties']
-
-        #get forcase of cities
-        forecast_url = grid_data['forecast']
-        forecast = requests.get(forecast_url, headers=HEADERS, timeout=10).json()
-
-        # get current conditions
-        current = next(
-            (p for p in forecast['properties']['periods'] if p['isDaytime']),
-            None
-        )
-        
-        return {
-            'forecast_office': grid_data.get('forecastOffice'),
-            'grid_id': f"{grid_data['gridId']}/{grid_data['gridX']},{grid_data['gridY']}",
-            'current_temp': current['temperature'],
-            'temp_unit': current['temperatureUnit'],
-            'conditions': current['shortForecast'],
-            'humidity': current.get('relativeHumidity', {}).get('value'),
-            'updated': time.strftime('%Y-%m-%d %H:%M:%S')
-        }
-    except Exception as e:
-        print(f"Error fetching weather for {latitude},{longitude}: {str(e)}")
-        return None
+def get_weather_data(latitude, longitude, retries=3):
+    """get weather from weather.gov API with retries"""
+    for attempt in range(retries):
+        try:
+            points_url = f"https://api.weather.gov/points/{latitude},{longitude}"
+            response = requests.get(points_url, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            grid_data = response.json()['properties']
+            
+            forecast_url = grid_data['forecast']
+            forecast = requests.get(forecast_url, headers=HEADERS, timeout=30).json()
+            
+            current = next(
+                (p for p in forecast['properties']['periods'] if p['isDaytime']),
+                None
+            )
+            
+            return {
+                'forecast_office': grid_data.get('forecastOffice'),
+                'grid_id': f"{grid_data['gridId']}/{grid_data['gridX']},{grid_data['gridY']}",
+                'current_temp': current['temperature'],
+                'temp_unit': current['temperatureUnit'],
+                'conditions': current['shortForecast'],
+                'humidity': current.get('relativeHumidity', {}).get('value'),
+                'updated': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed for {latitude},{longitude}: {str(e)}")
+            if attempt < retries - 1:
+                time.sleep(5)
+            else:
+                return None
 
 def analyze_cities_weather(city_data):
     # process the cities and compile all weather data
