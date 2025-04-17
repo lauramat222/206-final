@@ -32,14 +32,26 @@ def fetch_events(city: str, state: str) -> List[Dict[str, Any]]:
         return []
 
 def store_events(events: List[Dict[str, Any]]):
-    """Store events in the database"""
+    """Store events and venues in the database if price data is available"""
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     for event in events:
         try:
             venue = event['_embedded']['venues'][0]
-            
+
+            # Skip events with no pricing info
+            if 'priceRanges' not in event or not event['priceRanges']:
+                continue  # skip if price info is missing
+
+            price_range = event['priceRanges'][0]
+            price_min = price_range.get('min')
+            price_max = price_range.get('max')
+
+            # Skip if either price is None
+            if price_min is None or price_max is None:
+                continue
+
             # Insert venue
             cur.execute("""
                 INSERT OR IGNORE INTO venues VALUES (?, ?, ?, ?, ?, ?)
@@ -51,9 +63,8 @@ def store_events(events: List[Dict[str, Any]]):
                 venue.get('capacity'),
                 venue.get('url')
             ))
-            
+
             # Insert event
-            price_range = event.get('priceRanges', [{}])[0]
             cur.execute("""
                 INSERT OR IGNORE INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -62,15 +73,15 @@ def store_events(events: List[Dict[str, Any]]):
                 venue['id'],
                 event['dates']['start'].get('localDate'),
                 event['dates']['start'].get('localTime'),
-                price_range.get('min'),
-                price_range.get('max'),
+                price_min,
+                price_max,
                 event.get('dates', {}).get('status', {}).get('code'),
                 event.get('url')
             ))
-            
+
         except Exception as e:
             print(f"Error storing event {event.get('id')}: {str(e)}")
-    
+
     conn.commit()
     conn.close()
 
