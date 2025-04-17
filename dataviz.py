@@ -172,3 +172,14 @@ if __name__ == "__main__":
     plot_dual_axis_trends()
     plot_weather_sales_correlation()
     plot_combined_analysis()
+
+
+
+
+    import sqlite3conn = sqlite3.connect('ecents_weather.db')
+    df = pd.read_sql("SELECT date FROM events WHERE date IS NOT NULL", conn)
+    print(df.head())
+    print(f"Total dates: {len(df)}")
+    conn.close()
+
+    
