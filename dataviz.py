@@ -7,6 +7,7 @@ import numpy as np
 import textwrap
 from matplotlib.ticker import MaxNLocator
 from scipy.stats import linregress
+df = pd.read_csv('top_100_us_cities_lat_lon.csv')
 print(df.head())
 print(df.dtypes)
 
@@ -152,7 +153,7 @@ def plot_combined_analysis():
     conn = sqlite3.connect('events_weather.db')
     
     # Set global style parameters
-    plt.style.use('seaborn-v0_8')
+    plt.style.use('seaborn-v0_8-whitegrid')
     plt.rcParams.update({
         'font.size': 12,
         'axes.titlesize': 14,
