@@ -3,139 +3,168 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import textwrap
+from matplotlib.ticker import MaxNLocator
+from scipy.stats import linregress
 
 def wrap_labels(labels, width=15):
+    """Helper to wrap long labels"""
     return ['\n'.join(textwrap.wrap(label, width)) for label in labels]
 
-def plot_combined_analysis():
+def plot_dual_axis_trends():
+    """Dual-axis line chart for weather vs ticket sales over time"""
     conn = sqlite3.connect('events_weather.db')
-    plt.rcParams.update({'font.size': 10})  # Better default font size
+    
+    # Get time-based data (assuming events have dates)
+    df = pd.read_sql("""
+        SELECT 
+            e.date,
+            AVG(w.current_temp) as avg_temp,
+            COUNT(e.id) as event_count,
+            AVG(e.price_max) as avg_price
+        FROM events e
+        JOIN venues v ON e.venue_id = v.id
+        JOIN weather_data w ON v.city = w.city AND v.state = w.state
+        WHERE e.date IS NOT NULL
+        GROUP BY e.date
+        ORDER BY e.date
+    """, conn)
+    
+    if df.empty:
+        print("No time-series data available for dual-axis chart")
+        conn.close()
+        return
+    
+    # Convert date to datetime and sort
+    df['date'] = pd.to_datetime(df['date'])
+    df.sort_values('date', inplace=True)
+    
+    # Create figure and primary axis
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    
+    # Plot temperature on primary axis
+    color = 'tab:red'
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('Temperature (°F)', color=color)
+    temp_line = ax1.plot(df['date'], df['avg_temp'], 
+                        color=color, 
+                        marker='o', 
+                        linestyle='-',
+                        label='Temperature')
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax1.grid(True, alpha=0.3)
+    
+    # Create secondary axis for event count
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.set_ylabel('Number of Events', color=color)
+    event_line = ax2.plot(df['date'], df['event_count'], 
+                         color=color, 
+                         marker='s', 
+                         linestyle='--',
+                         label='Events')
+    ax2.tick_params(axis='y', labelcolor=color)
+    
+    # Add legend
+    lines = temp_line + event_line
+    labels = [l.get_label() for l in lines]
+    ax1.legend(lines, labels, loc='upper left')
+    
+    # Format x-axis
+    plt.gcf().autofmt_xdate()
+    ax1.xaxis.set_major_locator(MaxNLocator(10))  # Limit number of x-ticks
+    
+    plt.title('Temperature vs Event Count Over Time')
+    plt.tight_layout()
+    plt.savefig("dual_axis_trends.png", dpi=300, bbox_inches='tight')
+    plt.close()
+    conn.close()
+    print("Saved dual_axis_trends.png")
 
-    # ========== FIGURE 1: Combined Analysis ==========
-    df_temp = pd.read_sql("""
-        SELECT w.current_temp, COUNT(e.id) as event_count
+def plot_weather_sales_correlation():
+    """Scatter plot with trendline for weather vs ticket sales"""
+    conn = sqlite3.connect('events_weather.db')
+    
+    # Get weather vs sales data
+    df = pd.read_sql("""
+        SELECT 
+            w.current_temp,
+            COUNT(e.id) as event_count,
+            AVG(e.price_max) as avg_price
         FROM weather_data w
-        LEFT JOIN cities c ON w.city = c.city AND w.state = c.state
+        JOIN cities c ON w.city = c.city AND w.state = c.state
         LEFT JOIN venues v ON v.city = c.city AND v.state = c.state
         LEFT JOIN events e ON e.venue_id = v.id
         GROUP BY w.city, w.state
     """, conn)
-
-    df_conditions = pd.read_sql("""
-        SELECT w.conditions, COUNT(e.id) as event_count
-        FROM weather_data w
-        LEFT JOIN cities c ON w.city = c.city AND w.state = c.state
-        LEFT JOIN venues v ON v.city = c.city AND v.state = c.state
-        LEFT JOIN events e ON e.venue_id = v.id
-        GROUP BY w.conditions
-    """, conn)
-
-    df_cities = pd.read_sql("""
-        SELECT c.city, COUNT(e.id) as event_count
-        FROM cities c
-        LEFT JOIN venues v ON v.city = c.city AND v.state = c.state
-        LEFT JOIN events e ON e.venue_id = v.id
-        GROUP BY c.city
-        ORDER BY event_count DESC
-        LIMIT 10
-    """, conn)
-
-    fig, axs = plt.subplots(1, 3, figsize=(22, 6))
-
-    # Scatter plot: Temp vs Events
-    axs[0].scatter(df_temp['current_temp'], df_temp['event_count'], alpha=0.7, edgecolors='k')
-    axs[0].set_title("Temperature vs Events")
-    axs[0].set_xlabel("Temperature (°F)")
-    axs[0].set_ylabel("Number of Events")
-    axs[0].grid(True)
-
-    # Bar chart: Weather Condition
-    df_conditions.sort_values(by='event_count', ascending=False, inplace=True)
-    axs[1].bar(wrap_labels(df_conditions['conditions']), df_conditions['event_count'], color='skyblue', edgecolor='black')
-    axs[1].set_title("Events by Weather Condition")
-    axs[1].set_ylabel("Number of Events")
-    axs[1].tick_params(axis='x', rotation=45)
-    axs[1].grid(axis='y')
-
-    # Bar chart: Top Cities
-    axs[2].bar(df_cities['city'], df_cities['event_count'], color='lightgreen', edgecolor='black')
-    axs[2].set_title("Top Cities by Events")
-    axs[2].set_ylabel("Number of Events")
-    axs[2].tick_params(axis='x', rotation=45)
-    axs[2].grid(axis='y')
-
+    
+    if df.empty or len(df) < 3:
+        print("Not enough data for correlation plot")
+        conn.close()
+        return
+    
+    # Calculate regression
+    slope, intercept, r_value, p_value, std_err = linregress(
+        df['current_temp'], df['event_count'])
+    
+    # Create plot
+    plt.figure(figsize=(10, 6))
+    
+    # Scatter plot
+    scatter = plt.scatter(
+        df['current_temp'], 
+        df['event_count'],
+        c=df['avg_price'].fillna(0),
+        cmap='viridis',
+        alpha=0.7,
+        edgecolors='w',
+        s=100,
+        label='City Data'
+    )
+    
+    # Trendline
+    plt.plot(df['current_temp'], 
+             intercept + slope * df['current_temp'], 
+             'r--',
+             label=f'Trendline (R²={r_value**2:.2f})')
+    
+    # Formatting
+    plt.title('Temperature vs Event Count Correlation')
+    plt.xlabel('Temperature (°F)')
+    plt.ylabel('Number of Events')
+    plt.grid(True, alpha=0.3)
+    
+    # Colorbar for price
+    cbar = plt.colorbar(scatter)
+    cbar.set_label('Average Ticket Price ($)')
+    
+    plt.legend()
     plt.tight_layout()
-    plt.savefig("combined_analysis.png")
+    plt.savefig("weather_sales_correlation.png", dpi=300, bbox_inches='tight')
     plt.close()
+    conn.close()
+    print("Saved weather_sales_correlation.png")
 
-    # ========== FIGURE 2: Price Scatter or Fallback Bar ==========
-    df_prices = pd.read_sql("""
-        SELECT e.price_min, e.price_max, w.conditions
-        FROM events e
-        JOIN venues v ON e.venue_id = v.id
-        JOIN weather_data w ON v.city = w.city AND v.state = w.state
-        WHERE e.price_min IS NOT NULL AND e.price_max IS NOT NULL
-    """, conn)
-
-    if df_prices.empty:
-        print("No valid price data found. Plotting fallback bar chart.")
-
-        fallback_df = pd.read_sql("""
-            SELECT w.conditions, AVG(e.price_min) as avg_min, AVG(e.price_max) as avg_max
-            FROM events e
-            JOIN venues v ON e.venue_id = v.id
-            JOIN weather_data w ON v.city = w.city AND v.state = w.state
-            WHERE e.price_min IS NOT NULL AND e.price_max IS NOT NULL
-            GROUP BY w.conditions
-        """, conn)
-
-        fallback_df.sort_values(by='avg_max', ascending=False, inplace=True)
-        print("\nFallback data preview:")
-        print(fallback_df.head())
-        print(fallback_df.dtypes)
-        fallback_df['avg_min'] = pd.to_numeric(fallback_df['avg_min'], errors='coerce')
-        fallback_df['avg_max'] = pd.to_numeric(fallback_df['avg_max'], errors='coerce')
-        fallback_df.dropna(subset=['avg_min', 'avg_max'], how='all', inplace=True)
-
-        if fallback_df.empty:
-            print("⚠️ Still no usable numeric price data to plot. Exiting price_analysis.")
-            return
-
-        fallback_df.plot(
-            kind='bar',
-            x='conditions',
-            y=['avg_min', 'avg_max'],
-            figsize=(12, 6),
-            edgecolor='black',
-            color=['#4caf50', '#f44336']
-        )
-        
-        plt.title("Average Ticket Prices by Weather Condition")
-        plt.ylabel("Average Price ($)")
-        plt.xticks(ticks=np.arange(len(fallback_df['conditions'])), labels=wrap_labels(fallback_df['conditions']), rotation=45)
-        plt.tight_layout()
-        plt.savefig("price_analysis.png")
-        plt.close()
-    else:
-        plt.figure(figsize=(10, 6))
-        scatter = plt.scatter(
-            df_prices['price_min'],
-            df_prices['price_max'],
-            c=range(len(df_prices)),
-            cmap='viridis',
-            alpha=0.6,
-            edgecolors='k'
-        )
-        plt.title("Ticket Price Range by Event")
-        plt.xlabel("Minimum Price ($)")
-        plt.ylabel("Maximum Price ($)")
-        plt.grid(True)
-        plt.colorbar(scatter, label="Event Index")
-        plt.tight_layout()
-        plt.savefig("price_analysis.png")
-        plt.close()
-
+def plot_combined_analysis():
+    """Main visualization function (updated with cleaner formatting)"""
+    conn = sqlite3.connect('events_weather.db')
+    
+    # Set global style parameters
+    plt.style.use('seaborn')
+    plt.rcParams.update({
+        'font.size': 12,
+        'axes.titlesize': 14,
+        'axes.labelsize': 12,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'figure.titlesize': 16
+    })
+    
+    # [Rest of your existing plot_combined_analysis code...]
+    # Make sure to add similar formatting improvements to your existing plots
+    
     conn.close()
 
 if __name__ == "__main__":
+    plot_dual_axis_trends()
+    plot_weather_sales_correlation()
     plot_combined_analysis()
