@@ -104,12 +104,14 @@ def initialize_database(db_path='events_weather.db'):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     
-    cur.executescript("""
-        DROP TABLE IF EXISTS cities;
-        DROP TABLE IF EXISTS weather_data;
-        DROP TABLE IF EXISTS venues;
-        DROP TABLE IF EXISTS events;
-    """)
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='old_cities'")
+    if cur.fetchone():
+        cur.execute("DROP TABLE old_cities")
+
+    for table in ['cities', 'weather_data', 'venues', 'events']:
+        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
+        if cur.fetchone():
+            cur.execute(f"ALTER TABLE {table} RENAME TO old_{table}")
     
     # Create new tables
     cur.executescript("""
