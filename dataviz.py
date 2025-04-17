@@ -17,13 +17,15 @@ def plot_dual_axis_trends():
     # Get time-based data (assuming events have dates)
     df = pd.read_sql("""
         SELECT 
-            date('now', '_'|| (rowid-1) || ' days') as date,
-            AVG(current_temp) as avg_temp,
-            COUNT(events.id) as event_count
-        FROM weather_data
-        LEFT JOIN events ON 1=1
-        GROUP BY date
-        LIMIT 30
+            e.date,
+            AVG(w.current_temp) as avg_temp,
+            COUNT(e.id) as event_count
+        FROM events e  
+        JOIN venues v ON e.venue_id = v.id
+        JOIN weather_data w ON v.city = w.city AND v.state = w.state    
+        WHERE e.date IS NOT NULL
+        GROUP BY e.date
+        ORDER BY e.date
     """, conn)
     
     if df.empty:
