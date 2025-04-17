@@ -1,10 +1,14 @@
 import sqlite3
 import matplotlib.pyplot as plt
+print(plt.style.available)
 import pandas as pd
+pd.set_option('future.no_silent_downcasting', True) 
 import numpy as np
 import textwrap
 from matplotlib.ticker import MaxNLocator
 from scipy.stats import linregress
+print(df.head())
+print(df.dtypes)
 
 def wrap_labels(labels, width=15):
     """Helper to wrap long labels"""
@@ -148,7 +152,7 @@ def plot_combined_analysis():
     conn = sqlite3.connect('events_weather.db')
     
     # Set global style parameters
-    plt.style.use('seaborn')
+    plt.style.use('seaborn-v0_8')
     plt.rcParams.update({
         'font.size': 12,
         'axes.titlesize': 14,
