@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
 
     import sqlite3
-    conn = sqlite3.connect('ecents_weather.db')
+    conn = sqlite3.connect('events_weather.db')
     df = pd.read_sql("SELECT date FROM events WHERE date IS NOT NULL", conn)
     print(df.head())
     print(f"Total dates: {len(df)}")
