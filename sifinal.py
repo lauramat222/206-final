@@ -32,31 +32,44 @@ def fetch_events(city: str, state: str) -> List[Dict[str, Any]]:
         return []
 
 def store_events(events: List[Dict[str, Any]]):
-    """Store events and venues in the database if price data is available"""
+    """Store events and venues in the database if data is complete"""
     conn = get_db_connection()
     cur = conn.cursor()
 
     for event in events:
         try:
+            # Ensure venue info is available
+            if '_embedded' not in event or 'venues' not in event['_embedded']:
+                print(f"Skipping event {event.get('id')} — no venue info")
+                continue
+
             venue = event['_embedded']['venues'][0]
 
-            # Skip events with no pricing info
+            # Skip events with missing price info
             if 'priceRanges' not in event or not event['priceRanges']:
-                continue  # skip if price info is missing
+                print(f"Skipping event {event.get('id')} — no price info")
+                continue
 
             price_range = event['priceRanges'][0]
             price_min = price_range.get('min')
             price_max = price_range.get('max')
 
-            # Skip if either price is None
             if price_min is None or price_max is None:
+                print(f"Skipping event {event.get('id')} — price min/max missing")
+                continue
+
+            # Skip events missing dates
+            local_date = event.get('dates', {}).get('start', {}).get('localDate')
+            local_time = event.get('dates', {}).get('start', {}).get('localTime')
+            if not local_date:
+                print(f"Skipping event {event.get('id')} — no date")
                 continue
 
             # Insert venue
             cur.execute("""
                 INSERT OR IGNORE INTO venues VALUES (?, ?, ?, ?, ?, ?)
             """, (
-                venue['id'],
+                venue.get('id'),
                 venue.get('name'),
                 venue.get('city', {}).get('name'),
                 venue.get('state', {}).get('stateCode'),
@@ -68,11 +81,11 @@ def store_events(events: List[Dict[str, Any]]):
             cur.execute("""
                 INSERT OR IGNORE INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                event['id'],
-                event['name'],
-                venue['id'],
-                event['dates']['start'].get('localDate'),
-                event['dates']['start'].get('localTime'),
+                event.get('id'),
+                event.get('name'),
+                venue.get('id'),
+                local_date,
+                local_time,
                 price_min,
                 price_max,
                 event.get('dates', {}).get('status', {}).get('code'),
