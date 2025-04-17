@@ -113,7 +113,7 @@ def plot_weather_sales_correlation():
     scatter = plt.scatter(
         df['current_temp'], 
         df['event_count'],
-        c=df['avg_price'].fillna(0),
+        c=df['avg_price'].fillna(0).astype(float),
         cmap='viridis',
         alpha=0.7,
         edgecolors='w',
@@ -149,7 +149,7 @@ def plot_combined_analysis():
     conn = sqlite3.connect('events_weather.db')
     
     # Set global style parameters
-    plt.style.use('seaborn')
+    plt.style.use('seaborn-v0_8') 
     plt.rcParams.update({
         'font.size': 12,
         'axes.titlesize': 14,
