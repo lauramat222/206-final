@@ -115,24 +115,24 @@ def save_to_database(df, db_path='updated_events_weather.db'):
     conn.commit()
     conn.close()
 
-def initialize_database(db_path='events_weather.db'):
-    """Create all tables needed for the project"""
+def initialize_database(db_path='updated_events_weather.db'):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    
-    # List of tables we'll be managing
-        cur.execute("""
+
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS states (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             code TEXT UNIQUE
         );
     """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS conditions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             description TEXT UNIQUE
         );
     """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS cities (
             city TEXT,
@@ -143,6 +143,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (state_id) REFERENCES states(id)
         );
     """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS weather_data (
             city TEXT,
@@ -155,6 +156,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (condition_id) REFERENCES conditions(id)
         );
     """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS venues (
             id TEXT PRIMARY KEY,
@@ -166,6 +168,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (city, state_id) REFERENCES cities(city, state_id)
         );
     """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id TEXT PRIMARY KEY,
@@ -180,6 +183,7 @@ def initialize_database(db_path='events_weather.db'):
             FOREIGN KEY (venue_id) REFERENCES venues(id)
         );
     """)
+
     conn.commit()
     conn.close()
 
