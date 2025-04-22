@@ -16,26 +16,27 @@ def wrap_labels(labels, width=15):
     return ['\n'.join(textwrap.wrap(label, width)) for label in labels]
 
 def plot_dual_axis_trends():
-    """Dual-axis line chart for weather vs ticket sales over time"""
-    conn = sqlite3.connect('events_weather.db')
-    
-    # Get time-based data (assuming events have dates)
-    query = """
-        SELECT 
-            e.date,
-            AVG(w.current_temp) as avg_temp,
-            COUNT(e.id) as event_count
-        FROM events e  
-        JOIN venues v ON e.venue_id = v.id
-        JOIN cities c ON v.city = c.city AND v.state = c.state  # Changed from state_id
-        JOIN weather_data w ON w.city = c.city AND w.state = c.state
-        WHERE e.date IS NOT NULL
-        GROUP BY e.date
-        ORDER BY e.date
-    """
+    # Connect to your SQLite database
+    conn = sqlite3.connect('updated_events_weather.db')  # Make sure this matches your DB filename
 
-    df = pd.read_sql(query, conn)
-    conn.close()
+    query = """
+    SELECT 
+        e.date,
+        AVG(w.current_temp) as avg_temp,
+        COUNT(e.id) as event_count
+    FROM events e  
+    JOIN venues v ON e.venue_id = v.id
+    JOIN cities c ON v.city = c.city AND v.state = c.state  -- Changed from state_id
+    JOIN weather_data w ON w.city = c.city AND w.state = c.state
+    WHERE e.date IS NOT NULL
+    GROUP BY e.date
+    ORDER BY e.date
+    """
+    
+    try:
+        df = pd.read_sql(query, conn)
+    finally:
+        conn.close()
     
     # Convert date to datetime and sort
     df['date'] = pd.to_datetime(df['date'])
