@@ -134,13 +134,13 @@ def initialize_database(db_path='updated_events_weather.db'):
     """)
 
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS cities (
-            city TEXT,
-            state_id INTEGER,
-            latitude REAL,
-            longitude REAL,
-            PRIMARY KEY (city, state_id),
-            FOREIGN KEY (state_id) REFERENCES states(id)
+    CREATE TABLE IF NOT EXISTS cities (
+        city TEXT,
+        state_id INTEGER,
+        latitude REAL,
+        longitude REAL,
+        PRIMARY KEY (city, state_id),
+        FOREIGN KEY (state_id) REFERENCES states(id)
         );
     """)
 
@@ -194,6 +194,7 @@ def print_results(df):
         print(f"\n{row['city']}, {row['state']}:")
         print(f"  Current Temp: {row['current_temp']}°{row['temp_unit']}")
         print(f"  Conditions: {row['conditions']}")
+        humidity = row['humidity']
         print(f"  Humidity: {humidity if humidity is not None else 'N/A'}%")
         print(f"  Forecast Office: {row['forecast_office']}")
         print(f"  Last Updated: {row['updated']}")
