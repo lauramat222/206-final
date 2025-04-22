@@ -12,7 +12,7 @@ soup = BeautifulSoup(response.text, "html.parser")
 
 table = soup.find("table")
 if not table:
-    print("❌ No table found on the page. The website structure may have changed.")
+    print("No table found on the page. The website structure may have changed.")
     exit()
 
 city_data = []
