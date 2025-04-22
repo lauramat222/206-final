@@ -121,50 +121,53 @@ def initialize_database(db_path='events_weather.db'):
     cur = conn.cursor()
     
     # List of tables we'll be managing
-    tables = ['cities', 'weather_data', 'venues', 'events']
-    
-    for table in tables:
-        # First check if backup table exists and drop it if it does
-        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='old_{table}'")
-        if cur.fetchone():
-            cur.execute(f"DROP TABLE old_{table}")
-        
-        # Now check if main table exists and rename it to backup
-        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'")
-        if cur.fetchone():
-            cur.execute(f"ALTER TABLE {table} RENAME TO old_{table}")
-            
-    # Create new tables
-    cur.executescript("""
-        CREATE TABLE cities (
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS states (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE
+        );
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS conditions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT UNIQUE
+        );
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS cities (
             city TEXT,
-            state TEXT,
+            state_id INTEGER,
             latitude REAL,
             longitude REAL,
-            PRIMARY KEY (city, state)
+            PRIMARY KEY (city, state_id),
+            FOREIGN KEY (state_id) REFERENCES states(id)
         );
-        
-        CREATE TABLE weather_data (
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS weather_data (
             city TEXT,
-            state TEXT,
+            state_id INTEGER,
             current_temp REAL,
-            conditions TEXT,
+            condition_id INTEGER,
             humidity REAL,
             updated TEXT,
-            FOREIGN KEY (city, state) REFERENCES cities(city, state)
+            FOREIGN KEY (city, state_id) REFERENCES cities(city, state_id),
+            FOREIGN KEY (condition_id) REFERENCES conditions(id)
         );
-        
-        CREATE TABLE venues (
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS venues (
             id TEXT PRIMARY KEY,
             name TEXT,
             city TEXT,
-            state TEXT,
+            state_id INTEGER,
             capacity INTEGER,
             url TEXT,
-            FOREIGN KEY (city, state) REFERENCES cities(city, state)
+            FOREIGN KEY (city, state_id) REFERENCES cities(city, state_id)
         );
-        
-        CREATE TABLE events (
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS events (
             id TEXT PRIMARY KEY,
             name TEXT,
             venue_id TEXT,
