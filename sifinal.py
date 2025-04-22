@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 API_KEY = "t0OyBfrw3dS1yZjgLYIGCWrh68Pkb7bN"  # Replace with your actual key
 BASE_URL = "https://app.ticketmaster.com/discovery/v2/events/"
-DB_PATH = "events_weather.db"
+DB_PATH = "updated_events_weather.db"
 
 def get_db_connection():
     """Get a database connection"""
