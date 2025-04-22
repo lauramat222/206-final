@@ -28,15 +28,11 @@ def get_weather_data(latitude, longitude, retries=3):
             response = requests.get(points_url, headers=HEADERS, timeout=30)
             response.raise_for_status()
             grid_data = response.json()['properties']
-            
+
             forecast_url = grid_data['forecast']
             forecast = requests.get(forecast_url, headers=HEADERS, timeout=30).json()
-            
-            current = next(
-                (p for p in forecast['properties']['periods'] if p['isDaytime']),
-                None
-            )
-            
+            current = next((p for p in forecast['properties']['periods'] if p['isDaytime']), None)
+
             return {
                 'forecast_office': grid_data.get('forecastOffice'),
                 'grid_id': f"{grid_data['gridId']}/{grid_data['gridX']},{grid_data['gridY']}",
@@ -58,9 +54,7 @@ def analyze_cities_weather(city_data):
     results = []
     for _, row in city_data.iterrows():
         print(f"Processing {row['city']}, {row['state']}...")
-
         weather = get_weather_data(row['latitude'], row['longitude'])
-
         if weather:
             record = {
                 'city': row['city'],
@@ -70,34 +64,56 @@ def analyze_cities_weather(city_data):
                 **weather
             }
             results.append(record)
-        
-        time.sleep(1)  # Respect rate limits
-    
+        time.sleep(1)
     return pd.DataFrame(results)
 
 def save_results(df, output_file='city_weather_analysis.csv'):
     #save results to csv in SI 206/SI-final folder
-
-    base_path = os.path.expanduser('~')  # Gets your home directory
+    base_path = os.path.expanduser('~')
     output_path = os.path.join(base_path, 'Desktop', 'SI 206 Folder', 'SI-final', output_file)
-    
-    # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
     df.to_csv(output_path, index=False)
     return output_path
 
-def print_results(df):
-    print("\nWEATHER RESULTS")
-    print("="*50)
+def insert_state_and_get_id(cur, state_code):
+    cur.execute("INSERT OR IGNORE INTO states (code) VALUES (?)", (state_code,))
+    cur.execute("SELECT id FROM states WHERE code = ?", (state_code,))
+    return cur.fetchone()[0]
+
+def insert_condition_and_get_id(cur, condition_desc):
+    cur.execute("INSERT OR IGNORE INTO conditions (description) VALUES (?)", (condition_desc,))
+    cur.execute("SELECT id FROM conditions WHERE description = ?", (condition_desc,))
+    return cur.fetchone()[0]
+
+def save_to_database(df, db_path='updated_events_weather.db'):
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
     for _, row in df.iterrows():
-        print(f"\n{row['city']}, {row['state']}:")
-        print(f"  Current Temp: {row['current_temp']}°{row['temp_unit']}")
-        print(f"  Conditions: {row['conditions']}")
-        print(f"  Humidity: {row['humidity']}%")
-        print(f"  Forecast Office: {row['forecast_office']}")
-        print(f"  Last Updated: {row['updated']}")
-    print("\n" + "="*50)
+        city = row['city']
+        state = row['state']
+        latitude = row['latitude']
+        longitude = row['longitude']
+        temp = row['current_temp']
+        condition = row['conditions']
+        humidity = row['humidity']
+        updated = row['updated']
+
+        state_id = insert_state_and_get_id(cur, state)
+        condition_id = insert_condition_and_get_id(cur, condition)
+
+        cur.execute("""
+            INSERT OR IGNORE INTO cities (city, state_id, latitude, longitude)
+            VALUES (?, ?, ?, ?)
+        """, (city, state_id, latitude, longitude))
+
+        cur.execute("""
+            INSERT INTO weather_data (city, state_id, current_temp, condition_id, humidity, updated)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (city, state_id, temp, condition_id, humidity, updated))
+
+    conn.commit()
+    conn.close()
 
 def initialize_database(db_path='events_weather.db'):
     """Create all tables needed for the project"""
@@ -164,44 +180,28 @@ def initialize_database(db_path='events_weather.db'):
     conn.commit()
     conn.close()
 
-
-def save_to_database(df, db_path='events_weather.db'):
-    """Save weather data to SQLite database"""
-    conn = sqlite3.connect(db_path)
-    
-    # Save cities and weather data
-    df[['city', 'state', 'latitude', 'longitude']].to_sql(
-        'cities', conn, if_exists='replace', index=False)
-        
-    df[['city', 'state', 'current_temp', 'conditions', 'humidity', 'updated']].to_sql(
-        'weather_data', conn, if_exists='replace', index=False)
-    
-    conn.close()
-
+def print_results(df):
+    print("\nWEATHER RESULTS")
+    print("="*50)
+    for _, row in df.iterrows():
+        print(f"\n{row['city']}, {row['state']}:")
+        print(f"  Current Temp: {row['current_temp']}°{row['temp_unit']}")
+        print(f"  Conditions: {row['conditions']}")
+        print(f"  Humidity: {row['humidity']}%")
+        print(f"  Forecast Office: {row['forecast_office']}")
+        print(f"  Last Updated: {row['updated']}")
+    print("\n" + "="*50)
 
 def main():
     print("Starting weather data collection...")
-    
     initialize_database()
-
-    # load city data
     cities = load_city_data()
-
-    if cities is not None:
-        required_cols = ['city', 'state', 'latitude', 'longitude']
-        if all(col in cities.columns for col in required_cols):
-            # Analyze weather data
-            weather_df = analyze_cities_weather(cities)
-            
-            if not weather_df.empty:
-                output_path = save_results(weather_df)
-                save_to_database(weather_df)
-                try:
-                    import visualizations
-                    visualizations.plot_weather_vs_events()
-                except ImportError:
-                    print("Visualizations module not available")
-
+    if cities is not None and all(col in cities.columns for col in ['city', 'state', 'latitude', 'longitude']):
+        weather_df = analyze_cities_weather(cities)
+        if not weather_df.empty:
+            save_results(weather_df)
+            save_to_database(weather_df)
+            print_results(weather_df)
 
 if __name__ == "__main__":
     main()
