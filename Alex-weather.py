@@ -194,7 +194,7 @@ def print_results(df):
         print(f"\n{row['city']}, {row['state']}:")
         print(f"  Current Temp: {row['current_temp']}°{row['temp_unit']}")
         print(f"  Conditions: {row['conditions']}")
-        print(f"  Humidity: {row['humidity']}%")
+        print(f"  Humidity: {humidity if humidity is not None else 'N/A'}%")
         print(f"  Forecast Office: {row['forecast_office']}")
         print(f"  Last Updated: {row['updated']}")
     print("\n" + "="*50)
