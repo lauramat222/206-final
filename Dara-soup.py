@@ -11,6 +11,10 @@ response = requests.get(url, headers=headers)
 soup = BeautifulSoup(response.text, "html.parser")
 
 table = soup.find("table")
+if not table:
+    print("❌ No table found on the page. The website structure may have changed.")
+    exit()
+
 city_data = []
 
 for row in table.find_all("tr")[1:]:
