@@ -26,8 +26,8 @@ def plot_dual_axis_trends():
         COUNT(e.id) as event_count
     FROM events e  
     JOIN venues v ON e.venue_id = v.id
-    JOIN cities c ON v.city = c.city AND v.state = c.state  -- Changed from state_id
-    JOIN weather_data w ON w.city = c.city AND w.state = c.state
+    JOIN cities c ON v.city = c.city AND v.state_id = c.state_id
+    JOIN weather_data w ON w.city = c.city AND w.state_id = c.state_id
     WHERE e.date IS NOT NULL
     GROUP BY e.date
     ORDER BY e.date
