@@ -3,7 +3,7 @@ import requests
 import time
 from typing import List, Dict, Any
 
-API_KEY = "t0OyBfrw3dS1yZjgLYIGCWrh68Pkb7bN"  # Replace with your actual key
+API_KEY = "t0OyBfrw3dS1yZjgLYIGCWrh68Pkb7bN"  # consumer key
 BASE_URL = "https://app.ticketmaster.com/discovery/v2/events/"
 DB_PATH = "updated_events_weather.db"
 
@@ -111,7 +111,7 @@ def main():
         print(f"Processing {city}, {state_code}...")
         events = fetch_events(city, state_code)
         if events:
-            store_events(events)
+            store_events(events[:25])
         time.sleep(1)
 
 if __name__ == "__main__":
