@@ -98,7 +98,7 @@ def plot_weather_sales_correlation():
         JOIN cities c ON w.city = c.city AND w.state_id = c.state_id
         LEFT JOIN venues v ON v.city = c.city AND v.state_id = c.state_id
         LEFT JOIN events e ON e.venue_id = v.id
-        GROUP BY w.city, w.state
+        GROUP BY w.city, w.state_id
     """, conn)
     
     if df.empty or len(df) < 3:
