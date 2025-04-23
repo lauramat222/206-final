@@ -86,7 +86,7 @@ def plot_dual_axis_trends():
 
 def plot_weather_sales_correlation():
     """Scatter plot with trendline for weather vs ticket sales"""
-    conn = sqlite3.connect('events_weather.db')
+    conn = sqlite3.connect('updated_events_weather.db')
     
     # Get weather vs sales data
     df = pd.read_sql("""
@@ -150,7 +150,7 @@ def plot_weather_sales_correlation():
 
 def plot_combined_analysis():
     """Main visualization function (updated with cleaner formatting)"""
-    conn = sqlite3.connect('events_weather.db')
+    conn = sqlite3.connect('updated_events_weather.db')
     
     # Set global style parameters
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
 
     import sqlite3
-    conn = sqlite3.connect('events_weather.db')
+    conn = sqlite3.connect('updated_events_weather.db')
     df = pd.read_sql("SELECT date FROM events WHERE date IS NOT NULL", conn)
     print(df.head())
     print(f"Total dates: {len(df)}")
